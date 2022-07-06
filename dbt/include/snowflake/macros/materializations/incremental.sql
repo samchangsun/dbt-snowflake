@@ -35,7 +35,8 @@
   {% set existing_relation = load_relation(this) %}
   {% set tmp_relation = make_temp_relation(this) %}
 
-  {% set  grant_config = config.get('grants') %}
+  {% set grant_config = config.get('grants') %}
+  {% set copy_grants = config.get('copy_grants', False) %}
 
   {#-- Validate early so we don't run SQL if the strategy is invalid --#}
   {% set strategy = dbt_snowflake_validate_get_incremental_strategy(config) -%}
@@ -75,8 +76,11 @@
 
   {{ run_hooks(post_hooks) }}
 
+  {#-- if we're upserting/merging an existing table, we need to check for any grants that need to be revoked: should_revoke=True --#}
+  {#-- if we're fully replacing the table via alter-rename-swap, grants will carry over IFF copy_grants --#}
   {% set target_relation = target_relation.incorporate(type='table') %}
-  {% do apply_grants(target_relation, grant_config, should_revoke=True) %}
+  {% set is_replaced = (full_refresh_mode or existing_relation is none) %}
+  {% do apply_grants(target_relation, grant_config, should_revoke=(copy_grants or not is_replaced)) %}
   {% do persist_docs(target_relation, model) %}
 
   {% do unset_query_tag(original_query_tag) %}
