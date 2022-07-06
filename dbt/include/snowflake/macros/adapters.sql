@@ -284,3 +284,8 @@
     {{ snowflake_dml_explicit_transaction(truncate_dml) }}
   {%- endcall %}
 {% endmacro %}
+
+
+{% macro snowflake__are_grants_copied_over_when_replaced() %}
+    {{ return(config.get('copy_grants', False)) }}
+{% endmacro %}

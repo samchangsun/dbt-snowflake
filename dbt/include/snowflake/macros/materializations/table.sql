@@ -5,7 +5,6 @@
   {%- set identifier = model['alias'] -%}
 
   {% set grant_config = config.get('grants') %}
-  {% set copy_grants = config.get('copy_grants', False) %}
 
   {%- set old_relation = adapter.get_relation(database=database, schema=schema, identifier=identifier) -%}
   {%- set target_relation = api.Relation.create(identifier=identifier,
@@ -28,9 +27,8 @@
 
   {{ run_hooks(post_hooks) }}
 
-  {#-- If copy_grants is True, grants will be copied over by CREATE OR REPLACE --#}
-  {#-- Otherwise, they won't, so no need to revoke --#}
-  {% do apply_grants(target_relation, grant_config, should_revoke=copy_grants) %}
+  {% set should_revoke = do_we_need_to_show_and_revoke_grants(existing_relation, full_refresh_mode=True) %}
+  {% do apply_grants(target_relation, grant_config, should_revoke=should_revoke) %}
 
   {% do persist_docs(target_relation, model) %}
 
