@@ -308,3 +308,38 @@ class TestIncrementalMergeColumns(BaseTestSimpleCopy):
         })
         self.seed_and_run()
         self.assertTablesEqual("incremental_update_cols", "expected_result")
+
+class TestIncrementalPredicatesMerge(BaseTestSimpleCopy):
+    @property
+    def models(self):
+        return self.dir("models-incremental_predicates")
+
+    @property
+    def project_config(self):
+        return {
+            "seeds": {
+                "quote_columns": False
+            }
+        }
+
+    def seed_and_run(self):
+        self.run_dbt(["seed"])
+        self.run_dbt(["run"])
+
+    @use_profile("snowflake")
+    def test__snowflake__incremental_merge_columns(self):
+        self.use_default_project({
+            "seed-paths": ["seeds-incremental-predicates-initial"],
+            "seeds": {
+                "quote_columns": False
+            }
+        })
+        self.seed_and_run()
+        self.use_default_project({
+            "seed-paths": ["seeds-incremental-predicates-update"],
+            "seeds": {
+                "quote_columns": False
+            }
+        })
+        self.seed_and_run()
+        self.assertTablesEqual("incremental_predicates", "expected_result")
